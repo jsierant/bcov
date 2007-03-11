@@ -1,0 +1,18 @@
+bcov produces coverage information without recompiling a program
+by instrumenting it with breakpoints. Effectively it debugs the
+program automatically, removing each breakpoint after it has been
+hit. Currently only the main binary itself is instrumented.
+
+Usage: bcov binary [argument(s)]
+
+Executes the binary with the given arguments and stores the
+coverage summary in .bcovdump. The result file is more or less
+human readable (and easily machine readable), a nicer presentation
+can be generated with bcov-report:
+
+Usage: bcov-report [dumpfile] [output directory]
+
+Converts the coverage dump into an lcov-style html report. If
+not output directory is given bcov-report uses a temporary directory
+and tries to open the result in the standard browser.
+
