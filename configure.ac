@@ -16,6 +16,7 @@ AC_ARG_WITH(libdwarf,
 	[
 		if test X${withval} = X; then :; else
 			LIBDWARF_DIR=${withval}
+			LIBDWARF_DIR=`cd ${LIBDWARF_DIR} 2> /dev/null && pwd || echo ${LIBDWARF_DIR}`
 			LDFLAGS="${LDFLAGS} -L${LIBDWARF_DIR}"
 			CPPFLAGS="${CPPFLAGS} -I${LIBDWARF_DIR}/.."
 			AC_MSG_CHECKING(libdwarf directory)

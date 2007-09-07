@@ -3145,6 +3145,7 @@ if test "${with_libdwarf+set}" = set; then
   withval=$with_libdwarf;
 		if test X${withval} = X; then :; else
 			LIBDWARF_DIR=${withval}
+			LIBDWARF_DIR=`cd ${LIBDWARF_DIR} 2> /dev/null && pwd || echo ${LIBDWARF_DIR}`
 			LDFLAGS="${LDFLAGS} -L${LIBDWARF_DIR}"
 			CPPFLAGS="${CPPFLAGS} -I${LIBDWARF_DIR}/.."
 			{ echo "$as_me:$LINENO: checking libdwarf directory" >&5
