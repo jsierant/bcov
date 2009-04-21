@@ -17,18 +17,12 @@
 #include "Debugger.hpp"
 #include <iostream>
 #include <string>
+#include <cstring>
 #include <sys/ptrace.h>
 #include <sys/user.h>
 #include <sys/wait.h>
 //---------------------------------------------------------------------------
 using namespace std;
-//---------------------------------------------------------------------------
-// Unfortunately these are not part of sys/ptrace.h yet...
-#if !defined(PT_SETOPTIONS)
-static const __ptrace_request PTRACE_SETOPTIONS	= static_cast<__ptrace_request>(0x4200);
-#endif
-static const int PTRACE_O_TRACECLONE = 0x00000008;
-static const int PTRACE_EVENT_CLONE = 3;
 //---------------------------------------------------------------------------
 static unsigned char peekbyte(pid_t child,const void* ptr)
    // Read client memory

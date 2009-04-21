@@ -18,9 +18,10 @@
 #include <iostream>
 #include <fstream>
 #include <set>
+#include <cstring>
 #include <sys/fcntl.h>
-#include <libelf/libelf.h>
-#include <libdwarf/libdwarf.h>
+#include <libelf.h>
+#include <libdwarf.h>
 //---------------------------------------------------------------------------
 using namespace std;
 //---------------------------------------------------------------------------

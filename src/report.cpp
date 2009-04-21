@@ -19,6 +19,8 @@
 #include <map>
 #include <set>
 #include <vector>
+#include <cstdlib>
+#include <cstring>
 //---------------------------------------------------------------------------
 using namespace std;
 //---------------------------------------------------------------------------
@@ -605,7 +607,10 @@ static string tempDirectory()
    // Create a temporary directory
 {
    char buffer[]="/tmp/bcov-report.XXXXXX";
-   mkdtemp(buffer);
+   if (!mkdtemp(buffer)) {
+      perror("mkdtemp");
+      throw;
+   }
    cerr << "writing coverage report to " << buffer << endl;
    return string(buffer);
 }
