@@ -6,4 +6,7 @@
 /src/Makefile
 /src/bcov
 /src/bcov-report
+/Makefile.in
+/autom4te.cache/
+/configure
 
