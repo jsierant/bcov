@@ -117,9 +117,9 @@ bool Debugger::close()
 bool Debugger::loadBaseAddresses()
 {
    // grep it from /proc/self/maps, first column is address
-   char fname[20];
+   char fname[25];
 
-   sprintf(fname,"/proc/%ld/maps",child);
+   snprintf(fname,sizeof(fname),"/proc/%ld/maps",child);
 
    ifstream in(fname);
    if (!in.is_open()) {
@@ -127,13 +127,11 @@ bool Debugger::loadBaseAddresses()
       return false;
    }
    // 00a07000-00b45000 r-xp 00000000 08:01 131846     /lib/tls/i686/cmov/libc-2.10.1.so
-   char line[1000];
-   while (!in.eof()) {
-      in.getline(line, sizeof(line));
-      //cout << "map " << line << endl;
+   string line;
+   while (getline(in,line)) {
       // filter " r-xp "
-      if (strstr(line, " r-xp ")) {
-         char *pos=strrchr(line,' ');
+      if (strstr(line.c_str(), " r-xp ")) {
+         const char *pos=strrchr(line.c_str(),' ');
          if(pos && pos[1]!='[') {
             // first 8 bytes is address in hex without 0x
             unsigned long addr=0,v;
