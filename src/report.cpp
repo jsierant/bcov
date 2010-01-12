@@ -83,7 +83,7 @@ struct RunInfo
 
    public:
    /// Read it
-   bool read(const string& file);
+   bool read(const string& file,const string& filterPath);
    /// Write the report
    bool writeReport(const string& outputDirectory);
    /// Delete a written report
@@ -140,7 +140,7 @@ void RunInfo::updateStatistics()
    }
 }
 //---------------------------------------------------------------------------
-bool RunInfo::read(const string& fileName)
+bool RunInfo::read(const string& fileName,const string& filterPath)
    // Read the dump
 {
    ifstream in(fileName.c_str());
@@ -168,9 +168,12 @@ bool RunInfo::read(const string& fileName)
       if (currentLine.compare(0,5,"args ")==0) { args=currentLine.substr(5); continue; }
       if (currentLine.compare(0,5,"date ")==0) { timestamp=currentLine.substr(5); continue; }
       if (currentLine.compare(0,5,"file ")==0) {
-         string dir,name;
-         splitFileName(currentLine.substr(5),dir,name);
-         currentFile=&(dirs[dir].files[name]);
+         string dir,name,path=currentLine.substr(5);
+         // apply filter, set currentFile=0 when supressing
+         if ((filterPath=="") || (path.compare(0,filterPath.length(),filterPath)==0)) {
+            splitFileName(path,dir,name);
+            currentFile=&(dirs[dir].files[name]);
+         } else currentFile=0;
          continue;
       }
       // A regular line
@@ -618,7 +621,18 @@ static string tempDirectory()
 static void showHelp(const char* argv0)
    // Show the help
 {
-   cout << "usage: " << argv0 << " [dumpfile [output directory]]" << endl;
+   cout << "usage: " << argv0 << "[-i path] [dumpfile [output directory]]" << endl
+      << endl
+      << "\t--help\t\tshow help and end" << endl
+      << "\t--version\tshow the tool version and end" << endl
+      << endl
+      << "\t-i\t\tinclude files under given path in report (default /)" << endl;
+}
+//---------------------------------------------------------------------------
+static void showVersion(const char* argv0)
+   // Show the help
+{
+   cout << argv0 << " " << PACKAGE_VERSION " from package " << PACKAGE_TARNAME << endl;
 }
 //---------------------------------------------------------------------------
 int main(int argc,char* argv[])
@@ -626,16 +640,35 @@ int main(int argc,char* argv[])
    // Parse the command line
    string inputFile=".bcovdump";
    string outputDirectory;
-   if ((argc>1)&&(strcmp(argv[1],"--help")==0)) {
-      showHelp(argv[0]);
-      return 1;
+   string filterPath="";
+   int start=1;
+   while (start<argc) {
+      if (argv[start][0]=='-') {
+         if (strcmp(argv[start],"--help")==0) {
+            showHelp(argv[0]);
+            return 1;
+         } else if (strcmp(argv[start],"--version")==0) {
+            showVersion(argv[0]);
+            return 1;
+         } else if (argv[start][1]=='i') {
+            char *path;
+            if (argv[start][2])
+               path=(argv[start]+2);
+            else
+               path=argv[++start];
+            filterPath=realpath(path,0l);
+            start++;
+         } else break;
+      } else break;
    }
-   if (argc>1) inputFile=argv[1];
-   if (argc>2) outputDirectory=argv[2];
+   if (argc>start) {
+      inputFile=argv[start];
+      if (argc>(start+1)) outputDirectory=argv[start+1];
+   }
 
    // Parse the input
    RunInfo run;
-   if (!run.read(inputFile))
+   if (!run.read(inputFile,filterPath))
       return 1;
 
    // Generate a temporary directory if needed
