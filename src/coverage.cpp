@@ -310,10 +310,10 @@ int main(int argc,char* argv[])
    }
 
    // Find active lines
-   cout << "probing debug information..." << endl;
+   cout << "probing debug information for " << command << " ..." << endl;
    map<string,vector<pair<unsigned,void*> > > activeLines;
    if (!readDwarfLineNumbers(command,activeLines)) {
-      cerr << "unable to read dwarf2 debug info" << endl;
+      cerr << "unable to read dwarf2 debug info for "<< command << endl;
       return 1;
    }
    cout << "found active lines in " << activeLines.size() << " source files" << endl;
@@ -332,8 +332,41 @@ int main(int argc,char* argv[])
    }
    cout << "set " << activeAddresses.size() << " breakpoints" << endl;
 
-   // And execute
    bool stop=false;
+   if (libraries.size()) {
+     if (!(stop = runDebugger(dbg,activeAddresses))) {
+        map<string,vector<pair<unsigned,void*> > > activeLibraryLines;
+        int last_size=0;
+        for (int index=0;index<libraries.size();index++) {
+          cout << "probing debug information for " << libraries[index] << " ..." << endl;
+          if (!readDwarfLineNumbers(libraries[index],activeLibraryLines)) {
+             cerr << "unable to read dwarf2 debug info for " << libraries[index] << endl;
+             return 1;
+          }
+          cout << "found active lines in " << (activeLibraryLines.size()-last_size) << " source files" << endl;
+          last_size=activeLibraryLines.size();
+        }
+        activeLines.insert(activeLibraryLines.begin(),activeLibraryLines.end());
+
+        // Set more breakpoints
+        map<void*,Debugger::BreakpointInfo> activeLibraryAddresses;
+        for (map<string,vector<pair<unsigned,void*> > >::const_iterator iter=activeLibraryLines.begin(),limit=activeLibraryLines.end();iter!=limit;++iter) {
+           //cout << "file " << (*iter).first << endl;
+           // Collect all addresses
+           for (vector<pair<unsigned,void*> >::const_iterator iter2=(*iter).second.begin(),limit2=(*iter).second.end();iter2!=limit2;++iter2)
+              activeLibraryAddresses[(*iter2).second];
+        }
+        // Set the breakpoints
+        if (!dbg.setBreakpoints(activeLibraryAddresses)) {
+           cerr << "unable to set breakpoints" << endl;
+           return false;
+        }
+        cout << "set " << activeLibraryAddresses.size() << " more breakpoints" << endl;
+        activeAddresses.insert(activeLibraryAddresses.begin(),activeLibraryAddresses.end());
+     }
+   }
+
+   // And execute
    while (!stop) {
       stop = runDebugger(dbg,activeAddresses);
    }
