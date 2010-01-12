@@ -256,8 +256,17 @@ static void showHelp(const char* argv0)
 {
    cout << "usage: " << argv0 << " [-o dump] [-l library] command [arg(s)]" << endl
       << endl
-      << "\t-o\tcoverage output file" << endl
-      << "\t-l\textra library to profiles as well" <<endl;
+      << "\t--help\t\tshow help and end" << endl
+      << "\t--version\tshow the tool version and end" << endl
+      << endl
+      << "\t-o\t\tcoverage output file" << endl
+      << "\t-l\t\textra library to cover as well" <<endl;
+}
+//---------------------------------------------------------------------------
+static void showVersion(const char* argv0)
+   // Show the help
+{
+   cout << argv0 << " " << PACKAGE_VERSION " from package " << PACKAGE_TARNAME << endl;
 }
 //---------------------------------------------------------------------------
 int main(int argc,char* argv[])
@@ -272,6 +281,10 @@ int main(int argc,char* argv[])
       if (argv[start][0]=='-') {
          if (strcmp(argv[start],"--help")==0) {
             showHelp(argv[0]);
+            return 1;
+         }
+         if (strcmp(argv[start],"--version")==0) {
+            showVersion(argv[0]);
             return 1;
          }
          if (argv[start][1]=='o') {
