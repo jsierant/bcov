@@ -228,6 +228,29 @@ static bool dumpResult(const string& outputfile,const string& command,const vect
    return true;
 }
 //---------------------------------------------------------------------------
+static bool runDebugger(Debugger& dbg,map<void*,Debugger::BreakpointInfo>& addrs)
+   // run to the next breakpoint
+{
+   bool stop=false;
+   Debugger::Event e=dbg.run();
+   switch (e) {
+      case Debugger::Error: cerr << "error encountered while tracing" << endl; stop=true; break;
+      case Debugger::Exit: cerr << "program terminated" << endl; stop=true; break;
+      case Debugger::Trap: {
+         void* bpLocation = dbg.getIPBeforeTrap();
+         // A unknown trap? Could be a hard-coded one, ignore it
+         if (addrs.count(bpLocation)) {
+            // Remove the breakpoint
+            Debugger::BreakpointInfo& i=addrs[bpLocation];
+            dbg.eliminateHitBreakpoint(i);
+            i.hits++;
+         }
+      }
+      break;
+   }
+   return stop;
+}
+//---------------------------------------------------------------------------
 static void showHelp(const char* argv0)
    // Show the help
 {
@@ -312,20 +335,7 @@ int main(int argc,char* argv[])
    // And execute
    bool stop=false;
    while (!stop) {
-      Debugger::Event e=dbg.run();
-      switch (e) {
-         case Debugger::Error: cerr << "error encountered while tracing" << endl; stop=true; break;
-         case Debugger::Exit: cerr << "program terminated" << endl; stop=true; break;
-         case Debugger::Trap: {
-            void* bpLocation = dbg.getIPBeforeTrap();
-            // A unknown trap? Could be a hard-coded one, ignore it
-            if (!activeAddresses.count(bpLocation)) continue;
-            // Remove the breakpoint
-            Debugger::BreakpointInfo& i=activeAddresses[bpLocation];
-            dbg.eliminateHitBreakpoint(i);
-            i.hits++;
-            } break;
-      }
+      stop = runDebugger(dbg,activeAddresses);
    }
 
    // Close the debugger
