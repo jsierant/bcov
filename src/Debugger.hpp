@@ -29,6 +29,8 @@ class Debugger
    long child;
    /// The currently active child (can be different when threaded)
    long activeChild;
+   /// A map of base adresses for loaded modules
+   std::map<std::string,unsigned long> baseAddress;
 
    public:
    /// Constructor
@@ -40,6 +42,9 @@ class Debugger
    bool load(const std::string& executable,const std::vector<std::string>& arguments);
    /// Close the debugger
    bool close();
+
+   bool loadBaseAddresses();
+   unsigned long getBaseAddress(std::string library);
 
    /// Set breakpoints
    bool setBreakpoints(std::map<void*,BreakpointInfo>& addresses);

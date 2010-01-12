@@ -109,7 +109,7 @@ static string normalize(const string& filePath)
    return result;
 }
 //---------------------------------------------------------------------------
-static bool readDwarfLineNumbers(const string& fileName,map<string,vector<pair<unsigned,void*> > >& lines)
+static bool readDwarfLineNumbers(const string& fileName,map<string,vector<pair<unsigned,void*> > >& lines, unsigned long base)
    // Return the line numbers from dwarf informations
 {
    // Open The file
@@ -152,7 +152,7 @@ static bool readDwarfLineNumbers(const string& fileName,map<string,vector<pair<u
             return false;
 
          if (lineNo&&isCode) {
-            lines[normalize(lineSource)].push_back(pair<unsigned,void*>(lineNo,reinterpret_cast<void*>(addr)));
+            lines[normalize(lineSource)].push_back(pair<unsigned,void*>(lineNo,reinterpret_cast<void*>(addr+base)));
          }
 
          dwarf_dealloc(dbg,lineSource,DW_DLA_STRING);
@@ -312,7 +312,7 @@ int main(int argc,char* argv[])
    // Find active lines
    cout << "probing debug information for " << command << " ..." << endl;
    map<string,vector<pair<unsigned,void*> > > activeLines;
-   if (!readDwarfLineNumbers(command,activeLines)) {
+   if (!readDwarfLineNumbers(command,activeLines,0)) {
       cerr << "unable to read dwarf2 debug info for "<< command << endl;
       return 1;
    }
@@ -335,11 +335,13 @@ int main(int argc,char* argv[])
    bool stop=false;
    if (libraries.size()) {
      if (!(stop = runDebugger(dbg,activeAddresses))) {
+        dbg.loadBaseAddresses();
         map<string,vector<pair<unsigned,void*> > > activeLibraryLines;
         int last_size=0;
         for (int index=0;index<libraries.size();index++) {
-          cout << "probing debug information for " << libraries[index] << " ..." << endl;
-          if (!readDwarfLineNumbers(libraries[index],activeLibraryLines)) {
+          unsigned long base=dbg.getBaseAddress(libraries[index]);
+          cout << "probing debug information for " << libraries[index] << " loaded at " << base << " ..." << endl;
+          if (!readDwarfLineNumbers(libraries[index],activeLibraryLines,base)) {
              cerr << "unable to read dwarf2 debug info for " << libraries[index] << endl;
              return 1;
           }

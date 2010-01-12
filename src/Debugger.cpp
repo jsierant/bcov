@@ -16,6 +16,8 @@
 //---------------------------------------------------------------------------
 #include "Debugger.hpp"
 #include <iostream>
+#include <fstream>
+#include <cerrno>
 #include <string>
 #include <cstring>
 #include <sys/ptrace.h>
@@ -107,6 +109,54 @@ bool Debugger::close()
       child=0;
    }
    return true;
+}
+//---------------------------------------------------------------------------
+bool Debugger::loadBaseAddresses()
+{
+   // grep it from /proc/self/maps, first column is address
+   char fname[20];
+
+   sprintf(fname,"/proc/%ld/maps",child);
+
+   ifstream in(fname);
+   if (!in.is_open()) {
+      cerr << "unable to read " << fname << endl;
+      return false;
+   }
+   // 00a07000-00b45000 r-xp 00000000 08:01 131846     /lib/tls/i686/cmov/libc-2.10.1.so
+   char line[1000];
+   while (!in.eof()) {
+      in.getline(line, sizeof(line));
+      //cout << "map " << line << endl;
+      // filter " r-xp "
+      if (strstr(line, " r-xp ")) {
+         char *pos=strrchr(line,' ');
+         if(pos && pos[1]!='[') {
+            // first 8 bytes is address in hex without 0x
+            unsigned long addr=0,v;
+            for(int i=0;i<8;i++) {
+               if((line[i]>='0') && (line[i]<='9'))
+                  v=line[i]-'0';
+               else
+                  v=10+(line[i]-'a');
+               addr=(addr<<4)|v;
+               //cout << "  [" << i << "] : " << v << " : " << addr << endl;
+            }
+
+            string name=&pos[1];
+            baseAddress[name]=addr;
+
+            //cout << "base addr " << name << " : " << addr << endl;
+         }
+      }
+   }
+   in.close();
+   return true;
+}
+//---------------------------------------------------------------------------
+unsigned long Debugger::getBaseAddress(std::string library)
+{
+  return baseAddress[library];
 }
 //---------------------------------------------------------------------------
 bool Debugger::setBreakpoints(map<void*,BreakpointInfo>& addresses)
