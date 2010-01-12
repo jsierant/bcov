@@ -33,6 +33,9 @@ static unsigned char peekbyte(pid_t child,const void* ptr)
    unsigned long aligned=(addr/sizeof(long))*sizeof(long);
    union { long val; unsigned char data[sizeof(long)]; } data;
    data.val=ptrace(PTRACE_PEEKTEXT,child,aligned,0);
+   //if (data.val==-1) {
+   //  cerr << "ptrace(PTRACE_PEEKTEXT," << child << "," << aligned << ") failed: " << strerror(errno) << endl;
+   //}
    return data.data[addr-aligned];
 }
 //---------------------------------------------------------------------------
