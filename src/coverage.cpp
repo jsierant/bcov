@@ -282,12 +282,10 @@ int main(int argc,char* argv[])
          if (strcmp(argv[start],"--help")==0) {
             showHelp(argv[0]);
             return 1;
-         }
-         if (strcmp(argv[start],"--version")==0) {
+         } else if (strcmp(argv[start],"--version")==0) {
             showVersion(argv[0]);
             return 1;
-         }
-         if (argv[start][1]=='o') {
+         } else if (argv[start][1]=='o') {
             if (argv[start][2])
                outputfile=argv[start]+2;
             else
