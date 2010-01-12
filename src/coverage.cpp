@@ -19,6 +19,7 @@
 #include <fstream>
 #include <set>
 #include <cstring>
+#include <cstdlib>
 #include <sys/fcntl.h>
 #include <libelf.h>
 #include <libdwarf.h>
@@ -237,7 +238,10 @@ int main(int argc,char* argv[])
 {
    // Parse the command line
    int start=1;
+   vector<string> libraries;
    string outputfile=".bcovdump";
+
+   cout << "process commandline..." << endl;
    while (start<argc) {
       if (argv[start][0]=='-') {
          if (strcmp(argv[start],"--help")==0) {
@@ -246,8 +250,18 @@ int main(int argc,char* argv[])
          }
          if (argv[start][1]=='o') {
             if (argv[start][2])
-               outputfile=argv[start]+2; else
+               outputfile=argv[start]+2;
+            else
                outputfile=argv[++start];
+            start++;
+         } else if (argv[start][1]=='l') {
+            char *path;
+            if (argv[start][2])
+               path=(argv[start]+2);
+            else
+               path=argv[++start];
+            libraries.push_back(realpath(path,0l));
+            start++;
          } else break;
       } else break;
    }
