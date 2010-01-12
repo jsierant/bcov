@@ -1,0 +1,9 @@
+/Makefile
+/config.log
+/config.status
+/src/.deps/
+/src/*.o
+/src/Makefile
+/src/bcov
+/src/bcov-report
+
