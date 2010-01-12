@@ -231,7 +231,10 @@ static bool dumpResult(const string& outputfile,const string& command,const vect
 static void showHelp(const char* argv0)
    // Show the help
 {
-   cout << "usage: " << argv0 << " [-o dump] command [arg(s)]" << endl;
+   cout << "usage: " << argv0 << " [-o dump] [-l library] command [arg(s)]" << endl
+      << endl
+      << "\t-o\tcoverage output file" << endl
+      << "\t-l\textra library to profiles as well" <<endl;
 }
 //---------------------------------------------------------------------------
 int main(int argc,char* argv[])
