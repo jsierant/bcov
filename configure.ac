@@ -31,8 +31,16 @@ AC_CHECK_LIB([dwarf], [dwarf_init],
 )
 
 AC_CHECK_HEADERS([libdwarf.h], [],
-	[AC_MSG_FAILURE([libdwarf.h is required for bcov])]
+    [
+        AC_CHECK_HEADERS([libdwarf/libdwarf.h],
+            [CPPFLAGS="${CPPFLAGS} -I/usr/include/libdwarf"],
+	        [AC_MSG_FAILURE([libdwarf.h is required for bcov])]
+	    )
+	]
 )
+
+AC_SUBST(CPPFLAGS)
+AC_SUBST(LDFLAGS)
 
 AC_CONFIG_FILES([Makefile
 	src/Makefile])
