@@ -4,9 +4,11 @@
 /src/.deps/
 /src/*.o
 /src/Makefile
+/src/Makefile.in
 /src/bcov
 /src/bcov-report
 /Makefile.in
 /autom4te.cache/
 /configure
+/aclocal.m4
 
