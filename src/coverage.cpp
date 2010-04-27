@@ -21,10 +21,12 @@
 #include <cstring>
 #include <cstdlib>
 #include <sys/fcntl.h>
+#include <sys/wait.h>
 #include <libelf.h>
 #include <libdwarf.h>
 //---------------------------------------------------------------------------
 using namespace std;
+
 //---------------------------------------------------------------------------
 static void dwarfErrorHandler(Dwarf_Error error, Dwarf_Ptr /*userData*/)
    // Show the dwarf error message
@@ -232,6 +234,7 @@ static bool runDebugger(Debugger& dbg,map<void*,Debugger::BreakpointInfo>& addrs
    // run to the next breakpoint
 {
    bool stop=false;
+
    Debugger::Event e=dbg.run();
    switch (e) {
       case Debugger::Error: cerr << "error encountered while tracing" << endl; stop=true; break;
@@ -240,10 +243,16 @@ static bool runDebugger(Debugger& dbg,map<void*,Debugger::BreakpointInfo>& addrs
          void* bpLocation = dbg.getIPBeforeTrap();
          // A unknown trap? Could be a hard-coded one, ignore it
          if (addrs.count(bpLocation)) {
-            // Remove the breakpoint
             Debugger::BreakpointInfo& i=addrs[bpLocation];
-            dbg.eliminateHitBreakpoint(i);
-            i.hits++;
+            if (dbg.getActive()) {
+               // Remove the breakpoint
+               dbg.eliminateHitBreakpoint(i);
+               i.hits++;
+            }
+            else {
+               // Skip the breakpoint
+               dbg.skipHitBreakPoint(i);
+            }
          }
       }
       break;
@@ -260,7 +269,8 @@ static void showHelp(const char* argv0)
       << "\t--version\tshow the tool version and end" << endl
       << endl
       << "\t-o\t\tcoverage output file" << endl
-      << "\t-l\t\textra library to cover as well" <<endl;
+      << "\t-l\t\textra library to cover as well" << endl
+      << "\t-s\t\tcatch SIGUSR1 and SIGUSR2 to enable disable logging" << endl;
 }
 //---------------------------------------------------------------------------
 static void showVersion(const char* argv0)
@@ -275,6 +285,7 @@ int main(int argc,char* argv[])
    int start=1;
    vector<string> libraries;
    string outputfile=".bcovdump";
+   bool active=true;
 
    cout << "process commandline..." << endl;
    while (start<argc) {
@@ -299,6 +310,9 @@ int main(int argc,char* argv[])
                path=argv[++start];
             libraries.push_back(realpath(path,0l));
             start++;
+         } else if (argv[start][1]=='s') {
+            active=false;
+            start++;
          } else break;
       } else break;
    }
@@ -319,6 +333,8 @@ int main(int argc,char* argv[])
       cerr << "unable to load " << command << endl;
       return 1;
    }
+   
+   dbg.setActive(active);
 
    // Find active lines
    cout << "probing debug information for " << command << " ..." << endl;

@@ -51,7 +51,7 @@ static void pokebyte(pid_t child,void* ptr,unsigned char c)
 }
 //---------------------------------------------------------------------------
 Debugger::Debugger()
-   : child(0)
+   : child(0), active(true), checkActive(false) 
    // Constructor
 {
 }
@@ -209,6 +209,34 @@ void Debugger::eliminateHitBreakpoint(BreakpointInfo& i)
    pokebyte(activeChild,ptr,i.oldCode);
 }
 //---------------------------------------------------------------------------
+void Debugger::skipHitBreakPoint(BreakpointInfo& i)
+   // Skip the breakpoint we just hit and adjust IP
+{
+   user_regs_struct regs;
+   memset(&regs,0,sizeof(regs));
+   ptrace(PTRACE_GETREGS,activeChild,0,&regs);
+#if defined(__x86_64__)
+   void* ptr=reinterpret_cast<void*>(--regs.rip);
+#elif defined(__i386__)
+   void* ptr=reinterpret_cast<void*>(--regs.eip);
+#else
+   #error specify how to adjust the IP after a breakpoint
+#endif
+   ptrace(PTRACE_SETREGS,activeChild,0,&regs);
+   pokebyte(activeChild,ptr,i.oldCode);
+   // step one instruction:
+   ptrace(PTRACE_SINGLESTEP,activeChild,0,0);
+   // put breakpoint back
+#if defined(__x86_64__)||defined(__i386__)
+   pokebyte(activeChild,ptr,0xCC);
+#else
+   #error specify how to set a breakpoint
+#endif
+   // FIXME: should we check the status like in ::run()?
+   int status;
+   waitpid(-1,&status,__WALL);
+}
+//---------------------------------------------------------------------------
 Debugger::Event Debugger::run()
    // Run the program
 {
@@ -227,6 +255,23 @@ Debugger::Event Debugger::run()
 
       // A signal?
       if (WIFSTOPPED(status)) {
+         // enable/disable logging
+         if (WSTOPSIG(status)==SIGUSR1) {
+           if (checkActive) {
+             cout << "** Bcov logging on" << endl;
+             active=true;
+           }
+           ptrace(PTRACE_CONT,activeChild,0,0);
+           continue;
+         }          
+         if (WSTOPSIG(status)==SIGUSR2) {
+           if (checkActive) {
+             active=false;
+             cout << "** Bcov logging off" << endl;
+           }
+           ptrace(PTRACE_CONT,activeChild,0,0);
+           continue;
+         }          
          // A trap?
          if (WSTOPSIG(status)==SIGTRAP)
             return Trap;
@@ -281,3 +326,16 @@ void* Debugger::getIPBeforeTrap()
 #endif
 }
 //---------------------------------------------------------------------------
+void Debugger::setActive(bool active)
+{
+  this->active=active;
+  if (!active) {
+    // check for activation via SIGUSR1
+    checkActive=true;
+  }
+}
+
+bool Debugger::getActive()
+{
+  return active;
+}

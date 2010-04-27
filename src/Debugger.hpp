@@ -31,6 +31,9 @@ class Debugger
    long activeChild;
    /// A map of base adresses for loaded modules
    std::map<std::string,unsigned long> baseAddress;
+   /// active status
+   bool active;
+   bool checkActive;
 
    public:
    /// Constructor
@@ -52,12 +55,18 @@ class Debugger
    bool removeBreakpoints(std::map<void*,BreakpointInfo>& addresses);
    /// Remove the breakpoint we just hit and adjust IP
    void eliminateHitBreakpoint(BreakpointInfo& i);
+   /// Skip the breakpoint we just hit and adjust IP
+   void skipHitBreakPoint(BreakpointInfo& i);
    /// Run the program
    Event run();
    /// Get the current IP
    void* getIP();
    /// Get the current IP if we executed a trap instruction
    void* getIPBeforeTrap();
+   
+   /// active status
+   void setActive(bool active);
+   bool getActive();
 };
 //---------------------------------------------------------------------------
 #endif
