@@ -20,6 +20,7 @@
 #include <set>
 #include <cstring>
 #include <cstdlib>
+#include <unistd.h>
 #include <sys/fcntl.h>
 #include <sys/wait.h>
 #include <libelf.h>
